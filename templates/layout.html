@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>{% block title %}StarCoder Site{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css')}}">
+</head>
+<body>
+  <header>
+    <h1>StarCoder's Universe</h1>
+    <nav>
+      <a href="/">Home</a> |
+      <a href="/about">About</a> |
+      <a href="/contact">Contact</a> |
+      {% if session.get("logged_in") %}
+        <a href="/logout">Logout</a>
+      {% else %}
+        <a href="/login">Login</a>
+      {% endif %}
+    </nav>
+    
+  </header>
+
+  <main>
+        {% block content %}{% endblock %}
+  </main>
+
+  <footer>
+    <p>Built with "StupidLaptop" by StarCoder</p>
+  </footer>
+</body>
+</html>

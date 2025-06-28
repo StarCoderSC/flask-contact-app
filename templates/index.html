@@ -1,0 +1,21 @@
+{% extends "layout.html" %}
+
+{% block title %}Home | StarCoder{% endblock %}
+
+{% block content %}
+    <h2>Welcome to My Website!</h2>
+    <p>I'm building the future one line at a time.</p>
+
+    <h3>My Projects</h3>
+    <ul>
+        {% for project in projects %}
+          <li><stong>{{ project.name }}</stong>:{{ project.desc }}</li>
+        {% endfor %}
+    </ul>
+
+    <img src="{{ url_for('static', filename='me.jpg') }}" alt="My Pic" style="width:200px; border-radius:12px; margin-top:20px;">
+{% endblock %}
+
+
+
+

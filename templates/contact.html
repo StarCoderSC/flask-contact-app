@@ -1,0 +1,45 @@
+
+{% extends "layout.html" %}
+
+{% block title %}Contact Me{% endblock %}
+
+{% block content %}
+  <h2>Send Me a Message</h2>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+
+    {% if messages %}
+      {% for category, msg in message %}
+        <div class="flash {{ category }}">{{ msg }}</div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+   
+  <form method="POST" action="/contact" style="max-width: 400px; margin: auto;">
+    <input type="text" name="name" placeholder="Your Name" required><br><br>
+    <textarea name="message" placeholder="Your Message" rows="4" required></textarea><br><br>
+    <button type="submit">Send</button>
+  </form> 
+
+  {% if saved_messages %}
+    <hr>
+    <h3>Previous Messages 📜</h3>
+    <ul style="max-width: 500px; margin: auto; text-align: left;">
+      {% for id, name, msg in saved_messages %}
+        <li>
+          <strong>{{ name }}</strong>: {{ msg }}
+
+          {% if session.get("logged_in") %}
+            <form action="{{ url_for('delete', message_id=id) }}" method="POST" style="display:inline;">
+              <button type="submit" onclick="return confirm('Delete this message?');"></button>
+            </form>
+            <a href="{{ url_for('edit', message_id=id) }}">
+              <button style="background-color:#ffc107"></button>
+            </a>
+          {% endif %} 
+        </li>
+      {% endfor %} 
+    </ul>
+  {% endif %}
+{% endblock %}
+
