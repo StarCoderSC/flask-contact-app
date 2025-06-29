@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, session
-from db import init_db, save_message, get_messages, delete_message, get_message_by_id, update_message
+from db import init_db, save_message, get_messages, delete_message, get_message_by_id, update_message, create_post_table
 
 
 
@@ -104,6 +104,32 @@ def logout():
     session.pop("logged_in", None)
     flash("You have beeen logged out.", "success")
     return redirect(url_for("login"))
+
+@app.route("/blog/new", methods=["GET", "POST"])
+def new_post():
+    if request.method == "POST":
+        title = request.form.get["title"]
+        content = request.form.get["content"]
+
+        conn = sqlite3.connect("site.db")
+        c = conn.cursor()
+        c.execute("INSERT INTO posts (title, content) VALUES (?, ?)", (title, content))
+        conn.commit()
+        conn.close()
+
+        flash("Post added successfully", "success")
+        return redirect(url_for("blog"))
+
+    return render_template("new_post.html")
+
+@app.route("/blog")
+def blog():
+    conn = sqlite3.connect("site.db")
+    c = conn.cursor()
+    c.execute("SELECT id, title, content FROM posts ORDER BY id DESC")
+    posts = c.fetchall()
+    conn.close()
+    return render_template("blog.html", posts=posts)
 
 
 if __name__=="__main__":

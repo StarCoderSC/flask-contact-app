@@ -56,6 +56,23 @@ def update_message(message_id, name, message):
     conn.commit()
     conn.close()
 
+def create_post_table():
+    conn = sqlite3.connect('site.db')
+    c = conn.cursor()
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS posts 
+        (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            content TEXT NOT NULL
+        )
+    ''')
+
+    conn.commit()
+    conn.close()
+
+
+create_post_table()
 
 
 
