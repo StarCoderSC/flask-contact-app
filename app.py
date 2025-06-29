@@ -1,15 +1,15 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, session
-from db import init_db, save_message, get_messages, delete_message, get_message_by_id, update_message, create_post_table
+from db import init_db, save_message, get_messages, delete_message, get_message_by_id, update_message, create_post_table, init_all
 import sqlite3
-
+from werkzeug.security import check_password_hash
 
 app = Flask(__name__)
-app.secret_key = "starcoder-secret" # Needed for flash messages
+app.secret_key = "starcoder-supersecretkey123" # Needed for flash messages
 
 
-
+#init_db()
 # Initialize db once
-init_db()
+init_all()
 
 @app.route("/")
 def home():
@@ -70,7 +70,7 @@ def edit(message_id):
             flash("Please fill all the fields to update.", "error")
         else:
             update_message(message_id, new_name, new_msg)
-            flash("Message updated successfully.", "Success")
+            flash("Message updated successfully.", "success")
             return redirect(url_for("contact"))
     
     message = get_message_by_id(message_id)
@@ -80,33 +80,42 @@ def edit(message_id):
     
     return render_template("edit.html", message_id=message_id, name=message[0], message=message[1])
 
-ADMIN_USERNAME = "admin"
-ADMIN_PASSWORD = "starcoder/-+123!?"
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
-        username = request.form.get("username")
-        password = request.form.get("password")
+        username = request.form["username"]
+        password = request.form["password"]
 
-        if username == ADMIN_USERNAME and password == ADMIN_PASSWORD:
-            session["logged_in"] = True
-            flash("Logged in successfully!", "success")
-            return redirect(url_for("contact"))
-        
+        conn = sqlite3.connect("site.db")
+        c = conn.cursor()
+        c.execute("SELECT password FROM users WHERE username = ?", (username,))
+        result = c.fetchone()
+        conn.close()
+
+        if result and check_password_hash(result[0], password):
+            session["user"] = username
+            flash("Login successful!", "success")
+
+            return redirect(url_for("blog"))
         else:
-            flash("Invalid credentials", "error")
+            flash("Invalid username or password", "error")
     
     return render_template("login.html")
 
 @app.route("/logout")
 def logout():
-    session.pop("logged_in", None)
-    flash("You have been logged out.", "success")
-    return redirect(url_for("login"))
+    session.pop("user", None)
+    flash("Logged out successfully!", "info")
+    return redirect(url_for("blog"))
 
 @app.route("/blog/new", methods=["GET", "POST"])
 def new_post():
+    if "user" not in session:
+        flash("Please login to add a post", "error")
+
+        return redirect(url_for("login"))
+
     if request.method == "POST":
         title = request.form.get("title")
         content = request.form.get("content")
@@ -142,6 +151,12 @@ def blog():
 
 @app.route("/blog/edit/<int:post_id>", methods=["GET", "POST"])
 def edit_post(post_id):
+    if "user" not in session:
+        flash("Please login to add a post.", "error")
+
+        return redirect(url_for("login"))
+
+
     conn = sqlite3.connect("site.db")
     c = conn.cursor()
 
@@ -168,6 +183,11 @@ def edit_post(post_id):
 
 @app.route("/blog/delete/<int:post_id>")
 def delete_post(post_id):
+    if "user" not in session:
+        flash("Please login to add a post.", "error")
+
+        return redirect(url_for("login"))
+
     conn = sqlite3.connect("site.db")
     c = conn.cursor()
     c.execute("DELETE FROM posts WHERE id = ?", (post_id,))
