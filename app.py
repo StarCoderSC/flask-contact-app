@@ -108,7 +108,7 @@ def logout():
 @app.route("/blog/new", methods=["GET", "POST"])
 def new_post():
     if request.method == "POST":
-        title = request.form.get("title")"
+        title = request.form.get("title")
         content = request.form.get("content")
 
         if not title or not content:
