@@ -140,6 +140,41 @@ def blog():
     conn.close()
     return render_template("blog.html", posts=posts)
 
+@app.route("/blog/edit/<int:post_id>", methods=["GET", "POST"])
+def edit_post(post_id):
+    conn = sqlite3.connect("site.db"):
+    c = conn.cursor()
+
+    if request.method == "POST":
+        title = request.form["title"]
+        content = request.form["content"]
+        c.execute("UPDATE posts SET title = ?, content = ? WHERE id = ?", (title, content, post_id))
+
+        conn.commit()
+        conn.close()
+        flash("Post updated successfully!", "success")
+
+        return redirect(url_for("blog"))
+    
+    c.execute("SELECT title, content FROM posts WHERE id = ?", (post_id,))
+    post = c.fetchone()
+    conn.close()
+
+    if post is None:
+        flash("Post not found!", "error")
+        return redirect(url_for("blog"))
+    
+    return render_template("edit_post.html", post=post, post_id=post_id)
+
+@app.route("/blog/delete/<int:post_id>")
+def delete_post(post_id):
+    conn = sqlite3.connect("site.db")
+    c = conn.cursor()
+    c.execute("DELETE FROM posts WHERE id = ?", (post_id,))
+    conn.commit()
+    conn.close()
+    flash("Post deleted successfully!", "success")
+    return redirect(url_for("blog"))
 
 if __name__=="__main__":
     from os import environ

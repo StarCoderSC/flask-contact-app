@@ -70,7 +70,7 @@ def create_post_table():
     conn.commit()
     conn.close()
 
-
+# Run db once to create table
 create_post_table()
 
 
