@@ -60,8 +60,7 @@ def create_post_table():
     conn = sqlite3.connect('site.db')
     c = conn.cursor()
     c.execute('''
-        CREATE TABLE IF NOT EXISTS posts 
-        (
+        CREATE TABLE IF NOT EXISTS posts (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             title TEXT NOT NULL,
             content TEXT NOT NULL
@@ -73,6 +72,7 @@ def create_post_table():
 
 
 create_post_table()
+
 
 
 

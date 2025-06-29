@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, session
 from db import init_db, save_message, get_messages, delete_message, get_message_by_id, update_message, create_post_table
-
+import sqlite3
 
 
 app = Flask(__name__)
@@ -108,16 +108,25 @@ def logout():
 @app.route("/blog/new", methods=["GET", "POST"])
 def new_post():
     if request.method == "POST":
-        title = request.form.get["title"]
-        content = request.form.get["content"]
+        title = request.form.get("title")"
+        content = request.form.get("content")
 
-        conn = sqlite3.connect("site.db")
-        c = conn.cursor()
-        c.execute("INSERT INTO posts (title, content) VALUES (?, ?)", (title, content))
-        conn.commit()
-        conn.close()
-
-        flash("Post added successfully", "success")
+        if not title or not content:
+            flash("Both title and content are required", "error")
+            return redirect(url_for("new_post"))
+        
+        try:
+            conn = sqlite3.connect("site.db")
+            c = conn.cursor()
+            c.execute("INSERT INTO posts (title, content) VALUES (?, ?)", (title, content))
+            conn.commit()
+        except Exception as e:
+            flash(f"Error saving post: {e}", "error")
+        
+        finally:
+            conn.close()
+        
+        flash("Post added successfully!", "success")
         return redirect(url_for("blog"))
 
     return render_template("new_post.html")
