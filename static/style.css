@@ -17,7 +17,7 @@ button {
     margin-left: 10px;
 }
 
-button.hover {
+button:hover {
     background-color: #c82333;
 
 }

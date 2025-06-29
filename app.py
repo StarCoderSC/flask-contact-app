@@ -66,7 +66,7 @@ def edit(message_id):
         new_name = request.form.get("name")
         new_msg = request.form.get("message")
 
-        if not new_name or new_msg:
+        if not new_name or not new_msg:
             flash("Please fill all the fields to update.", "error")
         else:
             update_message(message_id, new_name, new_msg)
@@ -95,14 +95,14 @@ def login():
             return redirect(url_for("contact"))
         
         else:
-            flash("Invalid credentials", "errors")
+            flash("Invalid credentials", "error")
     
     return render_template("login.html")
 
 @app.route("/logout")
 def logout():
     session.pop("logged_in", None)
-    flash("You have beeen logged out.", "success")
+    flash("You have been logged out.", "success")
     return redirect(url_for("login"))
 
 @app.route("/blog/new", methods=["GET", "POST"])
@@ -142,7 +142,7 @@ def blog():
 
 @app.route("/blog/edit/<int:post_id>", methods=["GET", "POST"])
 def edit_post(post_id):
-    conn = sqlite3.connect("site.db"):
+    conn = sqlite3.connect("site.db")
     c = conn.cursor()
 
     if request.method == "POST":

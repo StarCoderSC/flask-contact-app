@@ -9,7 +9,7 @@
   {% with messages = get_flashed_messages(with_categories=true) %}
 
     {% if messages %}
-      {% for category, msg in message %}
+      {% for category, msg in messages %}
         <div class="flash {{ category }}">{{ msg }}</div>
       {% endfor %}
     {% endif %}
@@ -31,10 +31,10 @@
 
           {% if session.get("logged_in") %}
             <form action="{{ url_for('delete', message_id=id) }}" method="POST" style="display:inline;">
-              <button type="submit" onclick="return confirm('Delete this message?');"></button>
+              <button type="submit" onclick="return confirm('Delete this message?');">Delete</button>
             </form>
             <a href="{{ url_for('edit', message_id=id) }}">
-              <button style="background-color:#ffc107"></button>
+              <button style="background-color:#ffc107">Edit</button>
             </a>
           {% endif %} 
         </li>

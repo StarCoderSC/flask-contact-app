@@ -57,7 +57,7 @@ def update_message(message_id, name, message):
     conn.close()
 
 def create_post_table():
-    conn = sqlite3.connect('site.db')
+    conn = sqlite3.connect(DB_NAME)
     c = conn.cursor()
     c.execute('''
         CREATE TABLE IF NOT EXISTS posts (

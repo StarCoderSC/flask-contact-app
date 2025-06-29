@@ -2,7 +2,7 @@ services:
  - type: web
    name: starcoder-flask
    env: python
-   buildCommand: ""
+   buildCommand: pip install -r requirements.txt
    startCommand: python app.py
    envVars:
     - key: FLASK_ENV
