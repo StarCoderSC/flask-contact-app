@@ -2,9 +2,25 @@
 {% block title %}New Post{% endblock %}
 {% block content %}
   <h2>Create a New Blog Post</h2>
-  <form method="POST">
-    <input type="text" name="title" placeholder="Title" required><br><br>
-    <textarea name="content" rows="5" placeholder="Your post content..." required></textarea><br><br>
-    <button type="submit">Post</button>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, msg in messages %}
+        <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+          {{ msg }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+  
+  <form method="POST" class="mx-auto" style="max-width: 600px;">
+    <div class="mb-3">
+      <input type="text" class="form-control" name="title" placeholder="Post Title" required>
+    </div>
+    <div class="mb-3">
+      <textarea name="content" class="form-control" placeholder="Your Post content..." rows="5" required></textarea>
+    </div>
+    <button type="submit" class="btn btn-success">Post</button>
   </form>
 {% endblock %}

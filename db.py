@@ -87,7 +87,6 @@ def create_user_table():
     conn.close()
 
 
-
 from werkzeug.security import generate_password_hash
 
 def create_admin_user():
@@ -102,6 +101,8 @@ def init_all():
     create_user_table()
     create_admin_user()
 
+# Run db once to create table
+# create_post_table() -> Done
 if __name__=="__main__":
     init_all()
 
