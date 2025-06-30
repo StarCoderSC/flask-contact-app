@@ -1,15 +1,39 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, session
 from db import init_db, save_message, get_messages, delete_message, get_message_by_id, update_message, create_post_table, init_all
-import sqlite3
-from werkzeug.security import check_password_hash
+from flask_sqlalchemy import SQLAlchemy
+import os
+from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
+
+# Config
+app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:///site.db"
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+db = SQLAlchemy(app)
+
 app.secret_key = "starcoder-supersecretkey123" # Needed for flash messages
 
+# Models
+class Post(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(100), nullable=False)
+    content = db.Column(db.Text, nullable=False)
 
-#init_db()
-# Initialize db once
-init_all()
+    def __repr__(self):
+        return f"<Post {self.title}>"
+
+class User(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(20), unique=True, nullable=False)
+    password = db.Column(db.String(128), nullable=False)
+    
+# Only run once to create admin user
+def create_admin_user():
+    if not User.query.filter_by(username="admin").first():
+        hashed_pw = generate_password_hash("admin123")
+        admin = User(username="admin", password=hashed_pw)
+        db.session.add(admin)
+        db.session.commit()
 
 @app.route("/")
 def home():
@@ -18,7 +42,9 @@ def home():
         "desc": "Parses and evaluates math expressions"},
         {"name": "MinHeap Dijkstra", "desc": "Shortest path finder using custom heaps."},
         {"name": "Hospital Queue Sim",
-        "desc": "Priority queue simulation using heapq."}
+        "desc": "Priority queue simulation using heapq."},
+        {"name": "'Flatten-utils' Python module",
+        "desc": "🔧 A lightweight utility to deeply flatten nested Python structure like 'lists', 'tuples', 'sets','dicts' and more -- without breaking a sweat."}
     ]
 
     return render_template("index.html", projects=projects)
@@ -47,7 +73,7 @@ def contact():
 
 @app.route("/delete/<int:message_id>", methods=["POST"])
 def delete(message_id):
-    if not session.get("logged_in"):
+    if "user" not in session:
         flash("Unauthorized access!", "error")
         return redirect(url_for("login"))
 
@@ -58,7 +84,7 @@ def delete(message_id):
 
 @app.route("/edit/<int:message_id>", methods=["GET", "POST"])
 def edit(message_id):
-    if not session.get("logged_in"):
+    if "user" not in session:
         flash("Unauthorized access!", "error")
         return redirect(url_for("login"))
 
@@ -87,16 +113,10 @@ def login():
         username = request.form["username"]
         password = request.form["password"]
 
-        conn = sqlite3.connect("site.db")
-        c = conn.cursor()
-        c.execute("SELECT password FROM users WHERE username = ?", (username,))
-        result = c.fetchone()
-        conn.close()
-
-        if result and check_password_hash(result[0], password):
+        user = User.query.filter_by(username=username).first()
+        if user and check_password_hash(user.password, password):
             session["user"] = username
             flash("Login successful!", "success")
-
             return redirect(url_for("blog"))
         else:
             flash("Invalid username or password", "error")
@@ -109,6 +129,11 @@ def logout():
     flash("Logged out successfully!", "info")
     return redirect(url_for("blog"))
 
+@app.route("/blog")
+def blog():
+    posts = Post.query.order_by(Post.id.desc()).all()
+    return render_template("blog.html", posts=[(p.id, p.title, p.content) for p in posts])
+
 @app.route("/blog/new", methods=["GET", "POST"])
 def new_post():
     if "user" not in session:
@@ -117,86 +142,57 @@ def new_post():
         return redirect(url_for("login"))
 
     if request.method == "POST":
-        title = request.form.get("title")
-        content = request.form.get("content")
+        title = request.form["title"]
+        content = request.form["content"]
 
         if not title or not content:
             flash("Both title and content are required", "error")
             return redirect(url_for("new_post"))
         
-        try:
-            conn = sqlite3.connect("site.db")
-            c = conn.cursor()
-            c.execute("INSERT INTO posts (title, content) VALUES (?, ?)", (title, content))
-            conn.commit()
-        except Exception as e:
-            flash(f"Error saving post: {e}", "error")
-        
-        finally:
-            conn.close()
+        post = Post(title=title, content=content)
+        db.session.add(post)
+        db.session.commit()
         
         flash("Post added successfully!", "success")
         return redirect(url_for("blog"))
 
     return render_template("new_post.html")
 
-@app.route("/blog")
-def blog():
-    conn = sqlite3.connect("site.db")
-    c = conn.cursor()
-    c.execute("SELECT id, title, content FROM posts ORDER BY id DESC")
-    posts = c.fetchall()
-    conn.close()
-    return render_template("blog.html", posts=posts)
 
 @app.route("/blog/edit/<int:post_id>", methods=["GET", "POST"])
 def edit_post(post_id):
     if "user" not in session:
         flash("Please login to add a post.", "error")
-
         return redirect(url_for("login"))
 
-
-    conn = sqlite3.connect("site.db")
-    c = conn.cursor()
+    post = Post.query.get_or_404(post_id)
 
     if request.method == "POST":
-        title = request.form["title"]
-        content = request.form["content"]
-        c.execute("UPDATE posts SET title = ?, content = ? WHERE id = ?", (title, content, post_id))
-
-        conn.commit()
-        conn.close()
+        post.title = request.form["title"]
+        post.content = request.form["content"]
+        db.session.commit()
         flash("Post updated successfully!", "success")
-
         return redirect(url_for("blog"))
     
-    c.execute("SELECT title, content FROM posts WHERE id = ?", (post_id,))
-    post = c.fetchone()
-    conn.close()
-
-    if post is None:
-        flash("Post not found!", "error")
-        return redirect(url_for("blog"))
-    
-    return render_template("edit_post.html", post=post, post_id=post_id)
+    return render_template("edit_post.html", post=(post.title, post.content), post_id=post_id)
 
 @app.route("/blog/delete/<int:post_id>")
 def delete_post(post_id):
     if "user" not in session:
         flash("Please login to add a post.", "error")
-
         return redirect(url_for("login"))
 
-    conn = sqlite3.connect("site.db")
-    c = conn.cursor()
-    c.execute("DELETE FROM posts WHERE id = ?", (post_id,))
-    conn.commit()
-    conn.close()
+    post = Post.query.get_or_404(post_id)
+    db.session.delete(post)
+    db.session.commit()
     flash("Post deleted successfully!", "success")
     return redirect(url_for("blog"))
 
+# Set up db on first run
 if __name__=="__main__":
+    with app.app_context():
+        db.create_all()
+        create_admin_user()
     from os import environ
     port = int(environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)

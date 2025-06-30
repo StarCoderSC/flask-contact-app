@@ -1,4 +1,10 @@
 Flask==3.1.1
+Flask-SQLAlchemy==3.1.1
+greenlet==3.2.3
 Jinja2==3.1.6
 MarkupSafe==3.0.2
+mdurl==0.1.2
+Pygments==2.19.1
+SQLAlchemy==2.0.41
+typing_extensions==4.14.0
 Werkzeug==3.1.3
