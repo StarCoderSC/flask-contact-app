@@ -19,6 +19,8 @@ class Post(db.Model):
     title = db.Column(db.String(100), nullable=False)
     content = db.Column(db.Text, nullable=False)
 
+    comments = db.relationship("Comment", back_populates="poost", cascade="all, delete-orphan")
+
     def __repr__(self):
         return f"<Post {self.title}>"
 
@@ -26,6 +28,16 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(20), unique=True, nullable=False)
     password = db.Column(db.String(128), nullable=False)
+
+class Comment(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.Text, nullable=False)
+    post_id = db.Column(db.Integer, db.ForeignKey("post.id"), nullable=False)
+
+    post = db.relationship("Post", back_populates="comments")
+
+    def __repr__(self):
+        return f"<Comment {self.content[:20]}"
     
 # Only run once to create admin user
 def create_admin_user():
@@ -186,6 +198,27 @@ def delete_post(post_id):
     db.session.delete(post)
     db.session.commit()
     flash("Post deleted successfully!", "success")
+    return redirect(url_for("blog"))
+
+@app.route("/blog/comment/<int:post_id>", methods=["POST"])
+def add_comment(post_id):
+    if "user" not in session:
+        flash("You must be logged in to comment", "error")
+        return redirect(url_for('login'))
+    
+    content = request.form["content"]
+
+    post = Post.query.get_or_404(post_id)
+
+    comment = Comment(content=content, post=post)
+
+    db.session.add(comment)
+    db.session.commit()
+
+    flash("Comment added!", "success")
+    db.session.commit()
+
+    flash("Comment added!", "success")
     return redirect(url_for("blog"))
 
 # Set up db on first run

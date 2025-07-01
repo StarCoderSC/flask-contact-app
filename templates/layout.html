@@ -37,7 +37,16 @@
       {% endif %}
     {% endwith %}
 
-    {% block content %}{% endblock %}
+    {% block content %}
+    <div class="post">
+      <h2>{{ post.title }}</h2>
+      <p>{{ post.content }}</p>
+
+      {% if 'user' in session %}
+        <a href="{{ url_for('add_comment', post_is=post.id) }}" class="btn btn-info btn-sm">Add Comment</a>
+      {% endif %}
+    </div>
+    {% endblock %}
   </div>
 
   <footer class="text-center text-muted mt-5 mb-3">
